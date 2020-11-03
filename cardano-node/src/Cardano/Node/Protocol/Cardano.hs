@@ -21,6 +21,7 @@ module Cardano.Node.Protocol.Cardano
   ) where
 
 import           Prelude
+import           Cardano.Prelude (headMay)
 
 import           Control.Monad.Trans.Except (ExceptT)
 import           Control.Monad.Trans.Except.Extra (firstExceptT)
@@ -162,7 +163,7 @@ mkConsensusProtocolCardano NodeByronProtocolConfiguration {
               npcShelleySupportedProtocolVersionMajor
               npcShelleySupportedProtocolVersionMinor,
           shelleyLeaderCredentials =
-            shelleyLeaderCredentials
+            headMay shelleyLeaderCredentials
         }
         Consensus.ProtocolParamsAllegra {
           allegraProtVer =
@@ -171,7 +172,7 @@ mkConsensusProtocolCardano NodeByronProtocolConfiguration {
               npcShelleySupportedProtocolVersionMinor,
           allegraLeaderCredentials =
             -- TODO: separate credentials for Allega
-            Nothing
+            headMay shelleyLeaderCredentials
         }
         Consensus.ProtocolParamsMary {
           maryProtVer =
@@ -180,7 +181,7 @@ mkConsensusProtocolCardano NodeByronProtocolConfiguration {
               npcShelleySupportedProtocolVersionMinor,
           maryLeaderCredentials =
             -- TODO: separate credentials for Mary
-            Nothing
+            headMay shelleyLeaderCredentials
         }
         -- ProtocolParamsTransition specifies the parameters needed to transition between two eras
         -- The comments below also apply for the Shelley -> Allegra and Allegra -> Mary hard forks.
