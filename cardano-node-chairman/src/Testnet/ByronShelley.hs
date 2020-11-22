@@ -516,6 +516,7 @@ testnet H.Conf {..} = do
 
     void $ H.execCli
       [ "shelley", "transaction", "build-raw"
+      , "--shelley-era"
       , "--ttl", "1000"
       , "--fee", "0"
       , "--tx-in", txIn

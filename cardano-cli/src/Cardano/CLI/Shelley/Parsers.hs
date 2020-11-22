@@ -16,8 +16,8 @@ module Cardano.CLI.Shelley.Parsers
 import           Cardano.Prelude hiding (All, Any, option)
 import           Prelude (String)
 
-import           Cardano.Api.Typed hiding (PoolId)
 import           Cardano.Api.Protocol (Protocol (..))
+import           Cardano.Api.Typed hiding (PoolId)
 
 import           Cardano.Chain.Slotting (EpochSlots (..))
 import           Cardano.CLI.Shelley.Commands
@@ -147,7 +147,8 @@ pAddressCmd =
 
     pAddressBuildScript :: Parser AddressCmd
     pAddressBuildScript = AddressBuildMultiSig
-                            <$> pScript
+                            <$> pUseCardanoEra
+                            <*> pScript
                             <*> pNetworkId
                             <*> pMaybeOutputFile
 
@@ -492,7 +493,8 @@ pTransaction =
       $ Opt.command "sign-witness" assembleInfo <> Opt.internal
 
   pTransactionBuild :: Parser TransactionCmd
-  pTransactionBuild = TxBuildRaw <$> some pTxIn
+  pTransactionBuild = TxBuildRaw <$> pUseCardanoEra
+                                 <*> some pTxIn
                                  <*> some pTxOut
                                  <*> optional pMint
                                  <*> pTxTTL
@@ -505,14 +507,16 @@ pTransaction =
                                  <*> pTxBodyFile Output
 
   pTransactionSign  :: Parser TransactionCmd
-  pTransactionSign = TxSign <$> pTxBodyFile Input
+  pTransactionSign = TxSign <$> pUseCardanoEra
+                            <*> pTxBodyFile Input
                             <*> pSomeWitnessSigningData
                             <*> optional pNetworkId
                             <*> pTxFile Output
 
   pTransactionCreateWitness :: Parser TransactionCmd
   pTransactionCreateWitness = TxCreateWitness
-                                <$> pTxBodyFile Input
+                                <$> pUseCardanoEra
+                                <*> pTxBodyFile Input
                                 <*> pWitnessSigningData
                                 <*> optional pNetworkId
                                 <*> pOutputFile
@@ -1416,6 +1420,26 @@ pTxSubmitFile =
     <> Opt.help "Filepath of the transaction you intend to submit."
     <> Opt.completer (Opt.bashCompleter "file")
     )
+
+pUseCardanoEra :: Parser UseCardanoEra
+pUseCardanoEra = asum
+  [ Opt.flag' UseByronEra
+      (  Opt.long "byron-era"
+      <> Opt.help "Specify the Byron era"
+      )
+  , Opt.flag' UseShelleyEra
+      (  Opt.long "shelley-era"
+      <> Opt.help "Specify the Shelley era"
+      )
+  , Opt.flag' UseAllegraEra
+      (  Opt.long "allegra-era"
+      <> Opt.help "Specify the Allegra era"
+      )
+  , Opt.flag' UseMaryEra
+      (  Opt.long "mary-era"
+      <> Opt.help "Specify the Mary era"
+      )
+  ]
 
 pTxIn :: Parser TxIn
 pTxIn =

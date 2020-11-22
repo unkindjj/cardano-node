@@ -29,6 +29,7 @@ module Cardano.Api.Script (
   , ScriptFeatureInEra(..)
   , SignatureFeature
   , TimeLocksFeature
+  , HasScriptFeatures
 
     -- * Deprecated aliases
   , MultiSigScript
@@ -69,12 +70,11 @@ import qualified Cardano.Crypto.Hash.Class as Crypto
 import           Cardano.Slotting.Slot (SlotNo)
 
 import qualified Cardano.Ledger.Core as Shelley
-import qualified Cardano.Ledger.Era  as Ledger
+import qualified Cardano.Ledger.Era as Ledger
 
 import qualified Cardano.Ledger.ShelleyMA.Timelocks as Timelock
-import           Ouroboros.Consensus.Shelley.Eras
-                   (StandardAllegra, StandardMary, StandardShelley,
-                    StandardCrypto)
+import           Ouroboros.Consensus.Shelley.Eras (StandardAllegra, StandardCrypto, StandardMary,
+                     StandardShelley)
 import qualified Shelley.Spec.Ledger.Keys as Shelley
 import qualified Shelley.Spec.Ledger.Scripts as Shelley
 import qualified Shelley.Spec.Ledger.Tx as Shelley

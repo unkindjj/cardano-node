@@ -1,11 +1,11 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE EmptyCase #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -44,29 +44,28 @@ module Cardano.Api.TxBody (
 
 import           Prelude
 
-import qualified Data.List.NonEmpty as NonEmpty
-import           Data.String (IsString)
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Short as SBS
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence.Strict as Seq
 import qualified Data.Set as Set
+import           Data.String (IsString)
 
 import           Cardano.Binary (Annotated (..), reAnnotate, recoverBytes)
 import qualified Cardano.Binary as CBOR
-import qualified Shelley.Spec.Ledger.Serialization as CBOR
-                   (decodeNullMaybe, encodeNullMaybe)
+import qualified Shelley.Spec.Ledger.Serialization as CBOR (decodeNullMaybe, encodeNullMaybe)
 
-import           Cardano.Slotting.Slot (SlotNo (..))
 import qualified Cardano.Crypto.Hash.Class as Crypto
+import           Cardano.Slotting.Slot (SlotNo (..))
 
-import qualified Cardano.Crypto.Hashing as Byron
 import qualified Cardano.Chain.Common as Byron
 import qualified Cardano.Chain.UTxO as Byron
+import qualified Cardano.Crypto.Hashing as Byron
 
-import qualified Cardano.Ledger.Era as Ledger
 import qualified Cardano.Ledger.Core as Ledger
+import qualified Cardano.Ledger.Era as Ledger
 import qualified Cardano.Ledger.Shelley as Ledger
 import qualified Cardano.Ledger.ShelleyMA.TxBody as Allegra
 import           Ouroboros.Consensus.Shelley.Eras (StandardShelley)
@@ -211,9 +210,6 @@ toShelleyTxOut (TxOut addr (TxOutAdaOnly AdaOnlyInAllegraEra value)) =
 
 toShelleyTxOut (TxOut addr (TxOutValue MultiAssetInMaryEra value)) =
     Shelley.TxOut (toShelleyAddr addr) (toMaryValue value)
-
-
-
 
 -- ----------------------------------------------------------------------------
 -- Transaction bodies
@@ -511,4 +507,3 @@ genesisUTxOPseudoTxIn nw (GenesisUTxOKeyHash kh) =
     fromShelleyTxId :: Shelley.TxId StandardShelley -> TxId
     fromShelleyTxId (Shelley.TxId h) =
         TxId (Crypto.castHash h)
-

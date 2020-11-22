@@ -241,6 +241,7 @@ module Cardano.Api.Typed (
     ScriptFeatureInEra(..),
     SignatureFeature,
     TimeLocksFeature,
+    HasScriptFeatures,
     -- *** Deprecated aliases
     MultiSigScript,
     makeMultiSigScript,
@@ -467,7 +468,7 @@ import qualified Cardano.Chain.Slotting as Byron
 --
 -- Shelley imports
 --
-import           Ouroboros.Consensus.Shelley.Eras (StandardAllegra, StandardShelley, StandardMary)
+import           Ouroboros.Consensus.Shelley.Eras (StandardAllegra, StandardMary, StandardShelley)
 import           Ouroboros.Consensus.Shelley.Protocol.Crypto (StandardCrypto)
 
 import qualified Shelley.Spec.Ledger.Address as Shelley

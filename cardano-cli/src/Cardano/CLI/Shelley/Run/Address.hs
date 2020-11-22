@@ -1,4 +1,5 @@
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Cardano.CLI.Shelley.Run.Address
   ( ShelleyAddressCmdError
@@ -15,7 +16,8 @@ import qualified Data.ByteString.Lazy as LB
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 
-import           Control.Monad.Trans.Except.Extra (firstExceptT, handleIOExceptT, left, newExceptT)
+import           Control.Monad.Trans.Except.Extra (firstExceptT, handleIOExceptT, hoistEither,
+                     newExceptT)
 
 import           Cardano.Api.Typed
 
@@ -56,7 +58,7 @@ runAddressCmd cmd =
     AddressKeyGen kt vkf skf -> runAddressKeyGen kt vkf skf
     AddressKeyHash vkf mOFp -> runAddressKeyHash vkf mOFp
     AddressBuild payVk stkVk nw mOutFp -> runAddressBuild payVk stkVk nw mOutFp
-    AddressBuildMultiSig sFp nId mOutFp -> runAddressBuildScript sFp nId mOutFp
+    AddressBuildMultiSig useEra sFp nId mOutFp -> runAddressBuildScript useEra sFp nId mOutFp
     AddressInfo txt mOFp -> firstExceptT ShelleyAddressCmdAddressInfoError $ runAddressInfo txt mOFp
 
 runAddressKeyGen :: AddressKeyType
@@ -201,18 +203,41 @@ readAddressVerificationKeyTextOrFile vkTextOrFile =
 --
 
 runAddressBuildScript
-  :: ScriptFile
+  :: UseCardanoEra
+  -> ScriptFile
   -> NetworkId
   -> Maybe OutputFile
   -> ExceptT ShelleyAddressCmdError IO ()
-runAddressBuildScript (ScriptFile fp) nId mOutFp = do
+runAddressBuildScript useEra (ScriptFile fp) nId mOutFp = do
   scriptLB <- handleIOExceptT (ShelleyAddressCmdReadFileException . FileIOError fp)
                 $ LB.readFile fp
-  script <- case eitherDecode scriptLB :: Either String (MultiSigScript ShelleyEra) of
-               Right mss -> return $ makeMultiSigScript mss
-               Left err -> left . ShelleyAddressCmdAesonDecodeError fp $ Text.pack err
-  let payCred = PaymentCredentialByScript $ scriptHash script
-      scriptAddr = serialiseAddress $ makeShelleyAddress nId payCred NoStakeAddress
-  case mOutFp of
-    Just (OutputFile oFp) -> liftIO $ Text.writeFile oFp scriptAddr
-    Nothing -> liftIO $ Text.putStr scriptAddr
+  withCardanoEra useEra $ \_era _eraStyle ->
+    case useEra of
+      UseByronEra -> liftIO $ putTextLn "Not implemented yet"
+      UseShelleyEra -> do
+        aScript :: SimpleScript ShelleyEra <-
+         firstExceptT (ShelleyAddressCmdAesonDecodeError fp . Text.pack) . hoistEither $ decodeScript scriptLB
+        mOutput mOutFp $ serialiseScriptAddress nId aScript
+      UseAllegraEra -> do
+        aScript :: SimpleScript AllegraEra <-
+         firstExceptT (ShelleyAddressCmdAesonDecodeError fp . Text.pack) . hoistEither $ decodeScript scriptLB
+        mOutput mOutFp $ serialiseScriptAddress nId aScript
+      UseMaryEra -> do
+        aScript :: SimpleScript MaryEra <-
+         firstExceptT (ShelleyAddressCmdAesonDecodeError fp . Text.pack) . hoistEither $ decodeScript scriptLB
+        mOutput mOutFp $ serialiseScriptAddress nId aScript
+
+serialiseScriptAddress :: HasScriptFeatures era => NetworkId -> SimpleScript era -> Text
+serialiseScriptAddress nId s =
+  let payCred = makePaymentCredential s
+  in serialiseAddress $ makeShelleyAddress nId payCred NoStakeAddress
+
+decodeScript :: HasScriptFeatures era => LB.ByteString -> Either String (SimpleScript era)
+decodeScript bs = eitherDecode bs
+
+makePaymentCredential :: HasScriptFeatures era => SimpleScript era -> PaymentCredential
+makePaymentCredential s = PaymentCredentialByScript . scriptHash $ SimpleScript s
+
+mOutput :: Maybe OutputFile -> Text ->  ExceptT a IO ()
+mOutput (Just (OutputFile oFp)) output = liftIO $ Text.writeFile oFp output
+mOutput Nothing output = liftIO $ Text.putStr output
