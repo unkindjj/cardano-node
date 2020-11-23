@@ -58,7 +58,6 @@ import           Ouroboros.Consensus.BlockchainTime (SystemStart (..))
 import           Ouroboros.Consensus.Shelley.Protocol (StandardCrypto)
 import           Ouroboros.Consensus.Shelley.Node (ShelleyGenesisStaking(..))
 
-import qualified Shelley.Spec.Ledger.Address as Ledger
 import qualified Shelley.Spec.Ledger.API as Ledger
 import qualified Shelley.Spec.Ledger.Keys as Ledger
 import qualified Shelley.Spec.Ledger.BaseTypes as Ledger
@@ -465,13 +464,14 @@ runGenesisCreateStaked (GenesisDir rootdir)
     stdeldir = rootdir </> "stake-delegator-keys"
     utxodir  = rootdir </> "utxo-keys"
 
-    genStuffedAddress :: IO (Address Shelley)
+    genStuffedAddress :: IO (AddressInEra ShelleyEra)
     genStuffedAddress =
-      ShelleyAddress
+      shelleyAddressInEra <$>
+      (ShelleyAddress
        <$> pure Ledger.Testnet
        <*> (Ledger.KeyHashObj . mkKeyHash . read64BitInt
-            <$> Crypto.runSecureRandom (getRandomBytes 8))
-       <*> pure Ledger.StakeRefNull
+             <$> Crypto.runSecureRandom (getRandomBytes 8))
+       <*> pure Ledger.StakeRefNull)
 
     read64BitInt :: ByteString -> Int
     read64BitInt = (fromIntegral :: Word64 -> Int)
@@ -576,7 +576,7 @@ createDelegatorCredentials dir index = do
 
 data Delegation
   = Delegation
-    { dInitialUtxoAddr  :: Address Shelley
+    { dInitialUtxoAddr  :: AddressInEra ShelleyEra
     , dDelegStaking     :: Ledger.KeyHash Ledger.Staking StandardCrypto
     , dPoolParams       :: Ledger.PoolParams StandardShelley
     }
@@ -655,7 +655,7 @@ computeDelegation nw delegDir pool delegIx = do
       $ readFileTextEnvelope (AsVerificationKey AsStakeKey) stakeVKF
 
     pure Delegation
-      { dInitialUtxoAddr = initialUtxoAddr
+      { dInitialUtxoAddr = shelleyAddressInEra initialUtxoAddr
       , dDelegStaking = Ledger.hashKey stakeVK
       , dPoolParams = pool
       }
@@ -740,7 +740,7 @@ updateTemplate (SystemStart start)
     nonDelegCoin = fromIntegral $ fromMaybe (sgMaxLovelaceSupply template) (unLovelace <$> mAmountNonDeleg)
     delegCoin = fromIntegral amountDeleg
 
-    distribute :: Integer -> [Address Shelley] -> [(Address Shelley, Lovelace)]
+    distribute :: Integer -> [AddressInEra ShelleyEra] -> [(AddressInEra ShelleyEra, Lovelace)]
     distribute funds addrs =
       fst $ List.foldl' folder ([], fromIntegral funds) addrs
      where
