@@ -26,6 +26,8 @@ module Cardano.Api.Certificate (
     makeMIRCertificate,
     makeGenesisKeyDelegationCertificate,
 
+    toShelleyPoolParams,
+
     -- * Data family instances
     AsType(..)
   ) where
